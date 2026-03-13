@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -107,8 +108,14 @@ final chatControllerProvider = Provider<ChatController>((ref) {
 
 class ChatController {
   final Ref _ref;
+  CancelToken? _activeCancelToken;
 
   ChatController(this._ref);
+
+  void stopGeneration() {
+    _activeCancelToken?.cancel('User stopped generation');
+    _activeCancelToken = null;
+  }
 
   Future<void> sendMessage(String text, {String? imagePath}) async {
     final activeServer = _ref.read(activeServerProvider);
@@ -153,6 +160,8 @@ class ChatController {
     final modelId = conversation.modelId ?? 'local-model'; // Fallback if no model selected
     final systemPrompt = activeSystemPrompt?.content; // Hooked up
 
+    _activeCancelToken = CancelToken();
+
     try {
       final stream = apiService.streamChatCompletion(
         server: activeServer,
@@ -162,6 +171,7 @@ class ChatController {
         temperature: appSettings.defaultTemperature,
         topP: appSettings.defaultTopP,
         maxTokens: appSettings.defaultMaxTokens,
+        cancelToken: _activeCancelToken,
       );
 
       final buffer = StringBuffer();
@@ -184,12 +194,26 @@ class ChatController {
       await conversationsNotifier.updateMessage(conversationId, assistantMessage);
 
     } catch (e) {
-      // Stream failed - update message with error
-      assistantMessage = assistantMessage.copyWith(
-        content: '${assistantMessage.content}\n\n[ERROR: ${e.toString()}]',
-        isStreaming: false,
-      );
-      await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+      if (e is DioException && CancelToken.isCancel(e)) {
+        // Just clean up, don't show as error
+      } else {
+        // Stream failed - update message with error
+        assistantMessage = assistantMessage.copyWith(
+          content: '${assistantMessage.content}\n\n[ERROR: ${e.toString()}]',
+          isStreaming: false,
+        );
+        await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+      }
+    } finally {
+      // Mark as not streaming anymore even if cancelled
+      final finalConv = _ref.read(activeConversationProvider);
+      if (finalConv != null) {
+        final lastMsg = finalConv.messages.last;
+        if (lastMsg.id == assistantMessageId && lastMsg.isStreaming) {
+           await conversationsNotifier.updateMessage(conversationId, lastMsg.copyWith(isStreaming: false));
+        }
+      }
+      _activeCancelToken = null;
     }
   }
 

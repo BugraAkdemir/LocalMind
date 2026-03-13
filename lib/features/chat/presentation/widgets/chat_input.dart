@@ -8,11 +8,13 @@ import '../../../../app/theme/app_colors.dart';
 
 class ChatInput extends ConsumerStatefulWidget {
   final Function(String text, String? imagePath) onSend;
+  final VoidCallback? onStop;
   final bool isLoading;
 
   const ChatInput({
     super.key,
     required this.onSend,
+    this.onStop,
     this.isLoading = false,
   });
 
@@ -278,13 +280,13 @@ class _ChatInputState extends ConsumerState<ChatInput> {
               ],
               Container(
                 decoration: BoxDecoration(
-                  color: hasInput ? AppColors.accent : AppColors.cardSurface,
+                  color: hasInput || widget.isLoading ? AppColors.accent : AppColors.cardSurface,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  onPressed: (!hasInput || widget.isLoading) ? null : _handleSend,
+                  onPressed: widget.isLoading ? widget.onStop : (hasInput ? _handleSend : null),
                   icon: widget.isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.surface, strokeWidth: 2))
+                      ? const Icon(Icons.stop_circle, color: AppColors.surface)
                       : Icon(
                           Icons.arrow_upward, 
                           color: hasInput ? AppColors.surface : AppColors.textMuted,

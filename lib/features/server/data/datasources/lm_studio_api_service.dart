@@ -55,6 +55,7 @@ class LMStudioApiService {
     double temperature = 0.7,
     int maxTokens = -1,
     double topP = 1.0,
+    CancelToken? cancelToken,
   }) async* {
     final List<Map<String, dynamic>> apiMessages = [];
 
@@ -81,6 +82,7 @@ class LMStudioApiService {
           responseType: ResponseType.stream,
           receiveTimeout: ApiConstants.streamTimeout,
         ),
+        cancelToken: cancelToken,
       );
 
       final stream = response.data.stream as Stream<List<int>>;

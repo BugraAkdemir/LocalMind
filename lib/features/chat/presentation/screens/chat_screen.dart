@@ -141,6 +141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           ChatInput(
             onSend: _handleSend,
+            onStop: () => ref.read(chatControllerProvider).stopGeneration(),
             isLoading: isGenerating,
           ),
         ],
