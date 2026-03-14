@@ -3,6 +3,18 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../data/models/server_profile_model.dart';
 import '../../data/datasources/lm_studio_api_service.dart';
 
+enum ServerConnectionState { disconnected, connecting, connected }
+
+class ServerConnectionStatus {
+  final ServerConnectionState state;
+  final String? detail;
+
+  const ServerConnectionStatus(this.state, {this.detail});
+
+  bool get isConnected => state == ServerConnectionState.connected;
+  bool get isConnecting => state == ServerConnectionState.connecting;
+}
+
 final serverBoxProvider = Provider<Box<ServerProfileModel>>((ref) {
   return Hive.box<ServerProfileModel>('servers');
 });
@@ -18,6 +30,31 @@ final activeServerProvider = Provider<ServerProfileModel?>((ref) {
   } catch (e) {
     return null;
   }
+});
+
+final activeServerConnectionProvider =
+    StreamProvider.autoDispose<ServerConnectionStatus>((ref) {
+  final server = ref.watch(activeServerProvider);
+  final apiService = ref.read(lmStudioApiProvider);
+
+  if (server == null) {
+    return Stream.value(const ServerConnectionStatus(ServerConnectionState.disconnected));
+  }
+
+  Future<ServerConnectionStatus> checkOnce() async {
+    final ok = await apiService.ping(server);
+    return ok
+        ? const ServerConnectionStatus(ServerConnectionState.connected)
+        : const ServerConnectionStatus(ServerConnectionState.disconnected);
+  }
+
+  Stream<ServerConnectionStatus> stream() async* {
+    yield const ServerConnectionStatus(ServerConnectionState.connecting);
+    yield await checkOnce();
+    yield* Stream.periodic(const Duration(seconds: 3)).asyncMap((_) => checkOnce());
+  }
+
+  return stream().distinct((a, b) => a.state == b.state && a.detail == b.detail);
 });
 
 class ServersNotifier extends StateNotifier<List<ServerProfileModel>> {

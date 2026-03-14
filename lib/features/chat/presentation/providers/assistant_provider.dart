@@ -1,142 +1,124 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_locallm/features/settings/presentation/providers/settings_provider.dart';
+import 'package:mobile_locallm/features/settings/data/models/settings_model.dart';
 import 'package:mobile_locallm/core/services/foreground_service.dart';
 import 'package:mobile_locallm/core/services/hotword_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:async';
 
 final assistantControllerProvider = Provider<AssistantController>((ref) {
-  return AssistantController(ref);
+  final foreground = ref.read(foregroundServiceProvider);
+  final hotword = ref.read(hotwordServiceProvider);
+
+  final controller = AssistantController(
+    foreground: foreground,
+    hotword: hotword,
+  );
+
+  // Listen MUST be registered synchronously during provider creation.
+  ref.listen(settingsProvider, (previous, next) {
+    controller.syncWithSettings(next, previous: previous);
+  });
+
+  // Initial sync (async) to start/stop based on persisted settings.
+  Future.microtask(() async {
+    await controller.syncWithSettings(ref.read(settingsProvider), previous: null, force: true);
+  });
+
+  ref.onDispose(() {
+    controller.dispose();
+  });
+
+  return controller;
 });
 
 class AssistantController {
-  final Ref _ref;
+  final ForegroundService _foreground;
+  final HotwordService _hotword;
+
   bool _isOperating = false;
+  StreamSubscription<void>? _wakeSub;
 
-  AssistantController(this._ref) {
-    _init();
-  }
+  AssistantController({
+    required ForegroundService foreground,
+    required HotwordService hotword,
+  })  : _foreground = foreground,
+        _hotword = hotword;
 
-  Future<void> _init() async {
-    // Initialize service configuration once
-    try {
-      final foreground = _ref.read(foregroundServiceProvider);
-      await foreground.initService();
-      debugPrint('ASSISTANT: Foreground service initialized.');
-    } catch (e) {
-      debugPrint('ASSISTANT ERROR during initService: $e');
-    }
+  Future<void> syncWithSettings(
+    SettingsModel next, {
+    SettingsModel? previous,
+    bool force = false,
+  }) async {
+    final accessKey = _resolveAccessKey(next);
+    final shouldRun = next.isAssistantEnabled && accessKey.isNotEmpty;
 
-    // Listen to settings changes to start/stop or re-initialize the assistant
-    _ref.listen(settingsProvider, (previous, next) {
-      final wasEnabled = previous?.isAssistantEnabled ?? false;
-      final isEnabled = next.isAssistantEnabled;
-      final keyChanged = next.porcupineAccessKey != previous?.porcupineAccessKey;
-      final wordChanged = next.wakeWord != previous?.wakeWord;
-      final sensChanged = next.assistantSensitivity != previous?.assistantSensitivity;
+    final prevAccessKey = previous == null ? '' : _resolveAccessKey(previous);
+    final previouslyRunning = previous != null && previous.isAssistantEnabled && prevAccessKey.isNotEmpty;
 
-      if (isEnabled != wasEnabled || (isEnabled && (keyChanged || wordChanged || sensChanged))) {
-        if (isEnabled && next.porcupineAccessKey.isNotEmpty) {
-          debugPrint('ASSISTANT: Restarting/Starting due to setting change...');
-          _startAssistant();
-        } else if (!isEnabled && wasEnabled) {
-          debugPrint('ASSISTANT: Stopping assistant...');
-          _stopAssistant();
-        }
-      }
-    });
+    final configChanged = previous == null ||
+        accessKey != prevAccessKey ||
+        next.wakeWord != previous.wakeWord ||
+        next.assistantSensitivity != previous.assistantSensitivity;
 
-    // Check initial state
-    final settings = _ref.read(settingsProvider);
-    if (settings.isAssistantEnabled && settings.porcupineAccessKey.isNotEmpty) {
-      _startAssistant();
-    }
-  }
-
-  Future<void> _startAssistant() async {
-    if (_isOperating) {
-      debugPrint('ASSISTANT: Operation in progress, skipping start request.');
+    if ((force || configChanged) && shouldRun) {
+      await _startAssistant(next, accessKey: accessKey);
       return;
     }
+
+    if (!shouldRun && previouslyRunning) {
+      await _stopAssistant();
+    }
+  }
+
+  String _resolveAccessKey(SettingsModel settings) {
+    // Prefer `.env`, fall back to settings.
+    try {
+      final envKey = dotenv.maybeGet('PICOVOICE_ACCESS_KEY') ?? '';
+      if (envKey.isNotEmpty) return envKey;
+    } catch (_) {
+      // `.env` might be absent or dotenv not initialized.
+    }
+    return settings.porcupineAccessKey;
+  }
+
+  Future<void> _startAssistant(SettingsModel settings, {required String accessKey}) async {
+    if (_isOperating) return;
     _isOperating = true;
     try {
-      debugPrint('ASSISTANT: BREADCRUMB 1 - Starting');
-      final settings = _ref.read(settingsProvider);
-      
-      // Prioritize .env key safely
-      String accessKey = '';
-      try {
-        accessKey = dotenv.maybeGet('PICOVOICE_ACCESS_KEY') ?? '';
-      } catch (_) {
-        debugPrint('ASSISTANT: DotEnv not initialized, using settings.');
-      }
+      // Ensure a clean state when restarting.
+      await _stopAssistantInternal();
 
-      if (accessKey.isEmpty) {
-        accessKey = settings.porcupineAccessKey;
-      }
-      
-      debugPrint('ASSISTANT: BREADCRUMB 2 - Settings read (Key present: ${accessKey.isNotEmpty})');
-
-      if (accessKey.isEmpty) {
-        debugPrint('ASSISTANT: BREADCRUMB 3 - Key missing');
-        _isOperating = false;
-        return;
-      }
-      
-      debugPrint('ASSISTANT: BREADCRUMB 4 - Requesting permissions');
       final micStatus = await Permission.microphone.request();
-      debugPrint('ASSISTANT: BREADCRUMB 5 - Mic status: $micStatus');
-      
-      if (!micStatus.isGranted) {
-        debugPrint('ASSISTANT: BREADCRUMB 6 - Mic denied');
-        _isOperating = false;
+      if (!micStatus.isGranted) return;
+
+      // Best-effort: don't block if denied.
+      try {
+        await Permission.notification.request();
+      } catch (_) {}
+
+      await _foreground.initService();
+      final fgOk = await _foreground.startService();
+      if (!fgOk) return;
+
+      final hotwordOk = await _hotword.initialize(
+        accessKey,
+        sensitivity: settings.assistantSensitivity,
+        keywordString: settings.wakeWord,
+      );
+      if (!hotwordOk) {
+        await _foreground.stopService();
         return;
       }
 
-      final notificationStatus = await Permission.notification.request();
-      debugPrint('ASSISTANT: BREADCRUMB 7 - Notif status: $notificationStatus');
+      await _hotword.start();
 
-      final foreground = _ref.read(foregroundServiceProvider);
-      final hotword = _ref.read(hotwordServiceProvider);
-
-      debugPrint('ASSISTANT: BREADCRUMB 8 - Preparing hotword engine');
-      try {
-        await hotword.stop();
-        await hotword.dispose();
-      } catch (e) {
-        debugPrint('ASSISTANT: BREADCRUMB 9 - Cleanup error (minor): $e');
-      }
-
-      debugPrint('ASSISTANT: BREADCRUMB 10 - Starting foreground service');
-      await foreground.initService(); // Re-init just in case
-      await Future.delayed(const Duration(milliseconds: 500));
-      final success = await foreground.startService();
-      debugPrint('ASSISTANT: BREADCRUMB 11 - Foreground success: $success');
-      
-      if (success) {
-        debugPrint('ASSISTANT: BREADCRUMB 12 - Initializing hotword');
-        final hotwordInitialized = await hotword.initialize(
-          accessKey,
-          sensitivity: settings.assistantSensitivity,
-          keywordString: settings.wakeWord,
-        );
-        
-        if (hotwordInitialized) {
-          debugPrint('ASSISTANT: BREADCRUMB 13 - Starting hotword capture');
-          await hotword.start();
-          debugPrint('ASSISTANT: BREADCRUMB 14 - Active');
-          
-          // Listen for wake word
-          hotword.onWakeWord.listen((_) {
-            _onWakeWordDetected();
-          });
-        } else {
-          debugPrint('ASSISTANT: BREADCRUMB 15 - Hotword init failed');
-        }
-      }
+      await _wakeSub?.cancel();
+      _wakeSub = _hotword.onWakeWord.listen((_) => _onWakeWordDetected());
     } catch (e, stack) {
-      debugPrint('ASSISTANT CRITICAL ERROR during _start: $e\n$stack');
+      debugPrint('ASSISTANT ERROR during start: $e\n$stack');
     } finally {
       _isOperating = false;
     }
@@ -154,17 +136,18 @@ class AssistantController {
 
   Future<void> _stopAssistantInternal() async {
     try {
-      debugPrint('ASSISTANT: Stopping and disposing local services...');
-      final foreground = _ref.read(foregroundServiceProvider);
-      final hotword = _ref.read(hotwordServiceProvider);
-
-      await hotword.stop();
-      await hotword.dispose();
-      await foreground.stopService();
-      debugPrint('ASSISTANT: All services stopped.');
+      await _wakeSub?.cancel();
+      _wakeSub = null;
+      await _hotword.stop();
+      await _hotword.dispose();
+      await _foreground.stopService();
     } catch (e) {
-      debugPrint('ASSISTANT ERROR during _stopInternal: $e');
+      debugPrint('ASSISTANT ERROR during stop: $e');
     }
+  }
+
+  Future<void> dispose() async {
+    await _stopAssistantInternal();
   }
 
   void _onWakeWordDetected() {

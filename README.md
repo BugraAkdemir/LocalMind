@@ -72,11 +72,14 @@ LocalMind follows **Clean Architecture** principles to ensure scalability and ma
     ```bash
     flutter pub get
     ```
-3.  Generate Hive adapters:
+3.  (Optional) Configure secrets locally:
+    - Copy `.env.example` to `.env`
+    - Fill `PICOVOICE_ACCESS_KEY` if you want wake-word assistant features
+4.  Generate Hive adapters:
     ```bash
     dart run build_runner build --delete-conflicting-outputs
     ```
-4.  Run the application:
+5.  Run the application:
     ```bash
     flutter run
     ```

@@ -43,6 +43,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final activeConversation = ref.watch(activeConversationProvider);
     final activeServer = ref.watch(activeServerProvider);
+    final serverConn = ref.watch(activeServerConnectionProvider);
     
     // Determine if we are currently waiting for a stream based on the last message
     final messages = activeConversation?.messages ?? [];
@@ -60,7 +61,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Row(
               children: [
                 ConnectionIndicator(
-                  isConnected: activeServer != null,
+                  isConnected: serverConn.valueOrNull?.isConnected ?? false,
+                  isConnecting: serverConn.isLoading || (serverConn.valueOrNull?.isConnecting ?? false),
                   size: 6,
                 ),
                 const SizedBox(width: 4),

@@ -24,7 +24,10 @@ class SettingsScreen extends ConsumerWidget {
         ),
         title: const Text(
           'Settings',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -52,10 +55,16 @@ class SettingsScreen extends ConsumerWidget {
               title: 'System & Logic',
               children: [
                 ListTile(
-                  leading: const Icon(Icons.terminal_rounded, color: AppColors.textPrimary),
+                  leading: const Icon(
+                    Icons.terminal_rounded,
+                    color: AppColors.textPrimary,
+                  ),
                   title: const Text('System Prompts'),
                   subtitle: const Text('Manage AI personalities and behavior'),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textMuted,
+                  ),
                   onTap: () => context.push('/prompts'),
                 ),
               ],
@@ -65,9 +74,14 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Experimental',
               children: [
                 SwitchListTile(
-                  secondary: const Icon(Icons.science_outlined, color: AppColors.textPrimary),
+                  secondary: const Icon(
+                    Icons.science_outlined,
+                    color: AppColors.textPrimary,
+                  ),
                   title: const Text('Beta Features'),
-                  subtitle: const Text('Enable experimental features (Restart required)'),
+                  subtitle: const Text(
+                    'Enable experimental features (Restart required)',
+                  ),
                   value: settings.isBetaEnabled,
                   activeTrackColor: AppColors.accent.withValues(alpha: 0.5),
                   activeThumbColor: AppColors.accent,
@@ -75,7 +89,9 @@ class SettingsScreen extends ConsumerWidget {
                     if (val) {
                       _showBetaWarningDialog(context, ref);
                     } else {
-                      ref.read(settingsProvider.notifier).updateBetaStatus(false);
+                      ref
+                          .read(settingsProvider.notifier)
+                          .updateBetaStatus(false);
                     }
                   },
                 ),
@@ -87,26 +103,38 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'AI Preferences',
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.record_voice_over, color: AppColors.textPrimary),
+                    leading: const Icon(
+                      Icons.record_voice_over,
+                      color: AppColors.textPrimary,
+                    ),
                     title: const Text('Voice Output'),
                     subtitle: const Text('Speak AI responses automatically'),
                     trailing: Switch(
                       value: settings.enableSpeech,
                       activeThumbColor: AppColors.accent,
                       onChanged: (val) {
-                        ref.read(settingsProvider.notifier).updateSpeechStatus(val);
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateSpeechStatus(val);
                       },
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.handyman_outlined, color: AppColors.textPrimary),
+                    leading: const Icon(
+                      Icons.handyman_outlined,
+                      color: AppColors.textPrimary,
+                    ),
                     title: const Text('Enable AI Tools'),
-                    subtitle: const Text('Allow AI to access battery/device info (Disable to hide tool prompts)'),
+                    subtitle: const Text(
+                      'Allow AI to access battery/device info (Disable to hide tool prompts)',
+                    ),
                     trailing: Switch(
                       value: settings.enableTools,
                       activeThumbColor: AppColors.accent,
                       onChanged: (val) {
-                        ref.read(settingsProvider.notifier).updateEnableTools(val);
+                        ref
+                            .read(settingsProvider.notifier)
+                            .updateEnableTools(val);
                       },
                     ),
                   ),
@@ -117,55 +145,92 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Voice Assistant (Beta)',
                 children: [
                   SwitchListTile(
-                    secondary: const Icon(Icons.mic, color: AppColors.textPrimary),
+                    secondary: const Icon(
+                      Icons.mic,
+                      color: AppColors.textPrimary,
+                    ),
                     title: const Text('Wake Word Assistant'),
-                    subtitle: const Text('Listen in background for voice commands'),
+                    subtitle: const Text(
+                      'Listen in background for voice commands',
+                    ),
                     value: settings.isAssistantEnabled,
                     activeTrackColor: AppColors.accent.withValues(alpha: 0.5),
                     activeThumbColor: AppColors.accent,
                     onChanged: (val) {
-                      ref.read(settingsProvider.notifier).updateAssistantStatus(val);
+                      ref
+                          .read(settingsProvider.notifier)
+                          .updateAssistantStatus(val);
                     },
                   ),
                   if (settings.isAssistantEnabled) ...[
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Wake Word Keyword', 
-                                     style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                          const Text(
+                            'Wake Word Keyword',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
-                            value: BuiltInKeyword.values.any((k) => k.name == settings.wakeWord)
+                            initialValue:
+                                BuiltInKeyword.values.any(
+                                  (k) => k.name == settings.wakeWord,
+                                )
                                 ? settings.wakeWord
                                 : BuiltInKeyword.PORCUPINE.name,
                             dropdownColor: AppColors.surfaceLight,
-                            style: const TextStyle(color: AppColors.textPrimary),
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                            ),
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: AppColors.surfaceLight,
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8), 
-                                borderSide: BorderSide.none
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
                               ),
                             ),
-                            items: BuiltInKeyword.values.map((k) => DropdownMenuItem(
-                              value: k.name,
-                              child: Text(k.name),
-                            )).toList(),
+                            items: BuiltInKeyword.values
+                                .map(
+                                  (k) => DropdownMenuItem(
+                                    value: k.name,
+                                    child: Text(k.name),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: (val) {
-                              if (val != null) ref.read(settingsProvider.notifier).updateWakeWord(val);
+                              if (val != null)
+                                ref
+                                    .read(settingsProvider.notifier)
+                                    .updateWakeWord(val);
                             },
                           ),
                           const SizedBox(height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Sensitivity Calibration', 
-                                         style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                              Text('${(settings.assistantSensitivity * 100).toInt()}%', 
-                                   style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
+                              const Text(
+                                'Sensitivity Calibration',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${(settings.assistantSensitivity * 100).toInt()}%',
+                                style: const TextStyle(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           Slider(
@@ -173,7 +238,9 @@ class SettingsScreen extends ConsumerWidget {
                             activeColor: AppColors.accent,
                             inactiveColor: AppColors.surfaceLight,
                             onChanged: (val) {
-                              ref.read(settingsProvider.notifier).updateAssistantSensitivity(val);
+                              ref
+                                  .read(settingsProvider.notifier)
+                                  .updateAssistantSensitivity(val);
                             },
                           ),
                         ],
@@ -181,18 +248,27 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                   ListTile(
-                    leading: const Icon(Icons.vpn_key, color: AppColors.textPrimary),
+                    leading: const Icon(
+                      Icons.vpn_key,
+                      color: AppColors.textPrimary,
+                    ),
                     title: const Text('Porcupine AccessKey'),
                     subtitle: Text(
                       settings.porcupineAccessKey.isEmpty
                           ? 'Not Set (Required for Wake Word)'
                           : '••••••••••••••••',
                       style: TextStyle(
-                        color: settings.porcupineAccessKey.isEmpty ? AppColors.error : AppColors.textSecondary,
+                        color: settings.porcupineAccessKey.isEmpty
+                            ? AppColors.error
+                            : AppColors.textSecondary,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.help_outline, color: AppColors.accent, size: 20),
+                      icon: const Icon(
+                        Icons.help_outline,
+                        color: AppColors.accent,
+                        size: 20,
+                      ),
                       onPressed: () => _showAccessKeyHelp(context),
                     ),
                     onTap: () => _showAccessKeyDialog(context, ref),
@@ -207,7 +283,10 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSection({required String title, required List<Widget> children}) {
+  Widget _buildSection({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -223,11 +302,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ),
-        GlassCard(
-          child: Column(
-            children: children,
-          ),
-        ),
+        GlassCard(child: Column(children: children)),
       ],
     );
   }
@@ -241,7 +316,10 @@ class SettingsScreen extends ConsumerWidget {
     return ListTile(
       leading: Icon(icon, color: AppColors.textPrimary),
       title: Text(title, style: const TextStyle(color: AppColors.textPrimary)),
-      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.textSecondary)),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(color: AppColors.textSecondary),
+      ),
       trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
       onTap: onTap,
     );
@@ -252,19 +330,30 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Select Theme', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          'Select Theme',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: ['light', 'dark', 'system'].map((mode) => RadioListTile<String>(
-            title: Text(mode.toUpperCase(), style: const TextStyle(color: AppColors.textPrimary)),
-            value: mode,
-            groupValue: ref.watch(settingsProvider).themeMode,
-            activeColor: AppColors.accent,
-            onChanged: (val) {
-              if (val != null) ref.read(settingsProvider.notifier).updateThemeMode(val);
-              Navigator.pop(context);
-            },
-          )).toList(),
+          children: ['light', 'dark', 'system']
+              .map(
+                (mode) => RadioListTile<String>(
+                  title: Text(
+                    mode.toUpperCase(),
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  value: mode,
+                  groupValue: ref.watch(settingsProvider).themeMode,
+                  activeColor: AppColors.accent,
+                  onChanged: (val) {
+                    if (val != null)
+                      ref.read(settingsProvider.notifier).updateThemeMode(val);
+                    Navigator.pop(context);
+                  },
+                ),
+              )
+              .toList(),
         ),
       ),
     );
@@ -275,52 +364,80 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Select Text Size', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          'Select Text Size',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: ['small', 'medium', 'large'].map((size) => RadioListTile<String>(
-            title: Text(size.toUpperCase(), style: const TextStyle(color: AppColors.textPrimary)),
-            value: size,
-            groupValue: ref.watch(settingsProvider).textSize,
-            activeColor: AppColors.accent,
-            onChanged: (val) {
-              if (val != null) ref.read(settingsProvider.notifier).updateTextSize(val);
-              Navigator.pop(context);
-            },
-          )).toList(),
+          children: ['small', 'medium', 'large']
+              .map(
+                (size) => RadioListTile<String>(
+                  title: Text(
+                    size.toUpperCase(),
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  value: size,
+                  groupValue: ref.watch(settingsProvider).textSize,
+                  activeColor: AppColors.accent,
+                  onChanged: (val) {
+                    if (val != null)
+                      ref.read(settingsProvider.notifier).updateTextSize(val);
+                    Navigator.pop(context);
+                  },
+                ),
+              )
+              .toList(),
         ),
       ),
     );
   }
 
   void _showAccessKeyDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController(text: ref.read(settingsProvider).porcupineAccessKey);
+    final controller = TextEditingController(
+      text: ref.read(settingsProvider).porcupineAccessKey,
+    );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Enter AccessKey', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          'Enter AccessKey',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: TextField(
           controller: controller,
           style: const TextStyle(color: AppColors.textPrimary),
           decoration: const InputDecoration(
             hintText: 'Enter Picovoice AccessKey',
             hintStyle: TextStyle(color: AppColors.textMuted),
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.accent)),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.accent),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL', style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () {
-              ref.read(settingsProvider.notifier).updatePorcupineAccessKey(controller.text);
+              ref
+                  .read(settingsProvider.notifier)
+                  .updatePorcupineAccessKey(controller.text);
               Navigator.pop(context);
             },
-            child: const Text('SAVE', style: TextStyle(color: AppColors.accent)),
+            child: const Text(
+              'SAVE',
+              style: TextStyle(color: AppColors.accent),
+            ),
           ),
         ],
       ),
@@ -332,23 +449,44 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('How to get AccessKey?', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          'How to get AccessKey?',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. Visit console.picovoice.ai', style: TextStyle(color: AppColors.textSecondary)),
-            Text('2. Create a free account.', style: TextStyle(color: AppColors.textSecondary)),
-            Text('3. Copy your "AccessKey" from the dashboard.', style: TextStyle(color: AppColors.textSecondary)),
+            Text(
+              '1. Visit console.picovoice.ai',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            Text(
+              '2. Create a free account.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            Text(
+              '3. Copy your "AccessKey" from the dashboard.',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
             SizedBox(height: 16),
-            Text('This key is required for the wake word engine to work offline.', 
-                 style: TextStyle(color: AppColors.accent, fontSize: 12, fontStyle: FontStyle.italic)),
+            Text(
+              'This key is required for the wake word engine to work offline.',
+              style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('GOT IT', style: TextStyle(color: AppColors.accent)),
+            child: const Text(
+              'GOT IT',
+              style: TextStyle(color: AppColors.accent),
+            ),
           ),
         ],
       ),
@@ -360,7 +498,10 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Warning: Beta Features', style: TextStyle(color: AppColors.error)),
+        title: const Text(
+          'Warning: Beta Features',
+          style: TextStyle(color: AppColors.error),
+        ),
         content: const Text(
           'These features are experimental and may cause crashes or battery drain. Proceed with caution.',
           style: TextStyle(color: AppColors.textSecondary),
@@ -368,14 +509,20 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL', style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
           TextButton(
             onPressed: () {
               ref.read(settingsProvider.notifier).updateBetaStatus(true);
               Navigator.pop(context);
             },
-            child: const Text('I UNDERSTAND', style: TextStyle(color: AppColors.accent)),
+            child: const Text(
+              'I UNDERSTAND',
+              style: TextStyle(color: AppColors.accent),
+            ),
           ),
         ],
       ),

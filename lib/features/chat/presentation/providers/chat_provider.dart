@@ -170,10 +170,11 @@ class ChatController {
           ? toolRegistry.tools.map((t) => t.toApiJson()).toList()
           : null;
 
+      final history = conversation.messages.where((m) => !m.isStreaming).toList();
       final stream = apiService.streamChatCompletion(
         server: activeServer,
         modelId: modelId,
-        messages: conversation.messages.where((m) => !m.isStreaming || m.id == assistantMessageId).toList(),
+        messages: history,
         systemPrompt: systemPrompt,
         temperature: appSettings.defaultTemperature,
         topP: appSettings.defaultTopP,
@@ -184,33 +185,41 @@ class ChatController {
 
       final buffer = StringBuffer();
       final Map<int, Map<String, dynamic>> toolCallsBuffer = {};
+      var lastUiUpdate = DateTime.fromMillisecondsSinceEpoch(0);
       
       await for (final delta in stream) {
         if (delta.containsKey('content')) {
           final chunk = delta['content'] as String?;
           if (chunk != null) {
             buffer.write(chunk);
-            // Every few chunks, update the UI
-            assistantMessage = assistantMessage.copyWith(content: buffer.toString());
-            await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+            final now = DateTime.now();
+            // Avoid hammering Hive/UI on every SSE frame.
+            if (now.difference(lastUiUpdate).inMilliseconds >= 80) {
+              lastUiUpdate = now;
+              assistantMessage = assistantMessage.copyWith(content: buffer.toString());
+              await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+            }
           }
         }
 
         if (delta.containsKey('tool_calls')) {
-          final toolCalls = delta['tool_calls'] as List<dynamic>;
-          for (var tc in toolCalls) {
-            final index = tc['index'] as int;
+          final toolCalls = delta['tool_calls'] as List<dynamic>? ?? const [];
+          for (final tcRaw in toolCalls) {
+            if (tcRaw is! Map) continue;
+            final index = (tcRaw['index'] as int?) ?? 0;
             if (!toolCallsBuffer.containsKey(index)) {
               toolCallsBuffer[index] = {
-                'id': tc['id'],
+                'id': tcRaw['id'],
                 'function': {
-                  'name': tc['function']?['name'] ?? '',
+                  'name': (tcRaw['function'] as Map?)?['name'] ?? '',
                   'arguments': '',
                 }
               };
             }
-            if (tc['function']?['arguments'] != null) {
-              toolCallsBuffer[index]!['function']['arguments'] += tc['function']['arguments'];
+            final fn = tcRaw['function'];
+            final argsPart = (fn is Map) ? fn['arguments'] : null;
+            if (argsPart is String && argsPart.isNotEmpty) {
+              toolCallsBuffer[index]!['function']['arguments'] += argsPart;
             }
           }
         }
@@ -230,14 +239,21 @@ class ChatController {
         for (var tc in toolCallsList) {
           final name = tc['function']['name'] as String;
           final argsString = tc['function']['arguments'] as String;
-          final tool = toolRegistry.tools.firstWhere((t) => t.name == name);
+          dynamic tool;
+          try {
+            tool = toolRegistry.tools.firstWhere((t) => t.name == name);
+          } catch (_) {
+            tool = null;
+          }
           
           Map<String, dynamic> args = {};
           try {
             args = jsonDecode(argsString);
           } catch (_) {}
 
-          final result = await tool.onExecute(args);
+          final result = tool == null
+              ? 'Tool not found: $name'
+              : await tool.onExecute(args);
           
           final toolResultMessage = MessageModel(
             id: const Uuid().v4(),
@@ -260,10 +276,11 @@ class ChatController {
           );
           await conversationsNotifier.addMessage(conversationId, finalAssistantMessage);
 
+          final finalHistory = updatedConversation.messages.where((m) => !m.isStreaming).toList();
           final finalStream = apiService.streamChatCompletion(
             server: activeServer,
             modelId: modelId,
-            messages: updatedConversation.messages.where((m) => !m.isStreaming || m.id == finalAssistantId).toList(),
+            messages: finalHistory,
             systemPrompt: systemPrompt,
             temperature: appSettings.defaultTemperature,
             topP: appSettings.defaultTopP,
@@ -272,13 +289,18 @@ class ChatController {
           );
 
           final finalBuffer = StringBuffer();
+          var finalLastUiUpdate = DateTime.fromMillisecondsSinceEpoch(0);
           await for (final delta in finalStream) {
             if (delta.containsKey('content')) {
               final chunk = delta['content'] as String?;
               if (chunk != null) {
                 finalBuffer.write(chunk);
-                finalAssistantMessage = finalAssistantMessage.copyWith(content: finalBuffer.toString());
-                await conversationsNotifier.updateMessage(conversationId, finalAssistantMessage);
+                final now = DateTime.now();
+                if (now.difference(finalLastUiUpdate).inMilliseconds >= 80) {
+                  finalLastUiUpdate = now;
+                  finalAssistantMessage = finalAssistantMessage.copyWith(content: finalBuffer.toString());
+                  await conversationsNotifier.updateMessage(conversationId, finalAssistantMessage);
+                }
               }
             }
           }
@@ -287,7 +309,10 @@ class ChatController {
           await conversationsNotifier.updateMessage(conversationId, finalAssistantMessage);
         }
       } else {
-        assistantMessage = assistantMessage.copyWith(isStreaming: false);
+        assistantMessage = assistantMessage.copyWith(
+          content: buffer.toString(),
+          isStreaming: false,
+        );
         await conversationsNotifier.updateMessage(conversationId, assistantMessage);
       }
 

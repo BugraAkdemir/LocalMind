@@ -40,6 +40,22 @@ class LMStudioApiService {
     }
   }
 
+  /// Lightweight reachability check.
+  ///
+  /// Note: A non-200 response (e.g. 400 "no model loaded") still means the server
+  /// is reachable, so this returns `true` for any HTTP response.
+  Future<bool> ping(ServerProfileModel server) async {
+    try {
+      await _dio.get(ApiConstants.modelsEndpoint(server.host, server.port));
+      return true;
+    } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.badResponse) {
+        return true;
+      }
+      return false;
+    }
+  }
+
   /// Fetches the list of available models from the server
   Future<List<Map<String, dynamic>>> getModels(
       ServerProfileModel server) async {
@@ -90,26 +106,37 @@ class LMStudioApiService {
 
       final stream = response.data.stream as Stream<List<int>>;
 
+      // SSE lines can be split across TCP frames/chunks; keep a carry buffer.
+      var carry = '';
       await for (final chunk in stream) {
-        final lines = utf8.decode(chunk).split('\n');
-        for (final line in lines) {
-          if (line.startsWith('data: ') && line != 'data: [DONE]') {
-            final dataStr = line.substring(6);
-            if (dataStr.trim().isEmpty) continue;
-            
-            try {
-              final data = jsonDecode(dataStr);
-              final choices = data['choices'] as List<dynamic>?;
-              if (choices != null && choices.isNotEmpty) {
-                final delta = choices.first['delta'] as Map<String, dynamic>?;
-                if (delta != null) {
-                  yield delta;
-                }
-              }
-            } catch (e) {
-              // Ignore parse errors for partial chunks
-              continue;
+        carry += utf8.decode(chunk, allowMalformed: true);
+
+        final parts = carry.split('\n');
+        carry = parts.removeLast(); // keep last partial line (if any)
+
+        for (final rawLine in parts) {
+          final line = rawLine.trim();
+          if (!line.startsWith('data:')) continue;
+
+          final dataStr = line.substring('data:'.length).trim();
+          if (dataStr.isEmpty) continue;
+          if (dataStr == '[DONE]') continue;
+
+          try {
+            final data = jsonDecode(dataStr);
+            final choices = data['choices'] as List<dynamic>?;
+            if (choices == null || choices.isEmpty) continue;
+
+            final first = choices.first;
+            if (first is! Map<String, dynamic>) continue;
+
+            final delta = first['delta'];
+            if (delta is Map<String, dynamic>) {
+              yield delta;
             }
+          } catch (_) {
+            // Ignore malformed frames; the next line is likely to be valid JSON.
+            continue;
           }
         }
       }

@@ -22,11 +22,22 @@ void main() async {
   await Hive.initFlutter();
 
   // Register Hive adapters
-  Hive.registerAdapter(ServerProfileModelAdapter());
-  Hive.registerAdapter(ConversationModelAdapter());
-  Hive.registerAdapter(MessageModelAdapter());
-  Hive.registerAdapter(SystemPromptModelAdapter());
-  Hive.registerAdapter(SettingsModelAdapter());
+  // Hot-restart will re-run `main()`; guard adapter registration to avoid exceptions.
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(ServerProfileModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(ConversationModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(MessageModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(SystemPromptModelAdapter());
+  }
+  if (!Hive.isAdapterRegistered(4)) {
+    Hive.registerAdapter(SettingsModelAdapter());
+  }
 
   // Open boxes
   await Hive.openBox<ServerProfileModel>('servers');

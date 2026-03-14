@@ -120,6 +120,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
   @override
   Widget build(BuildContext context) {
     final servers = ref.watch(serversProvider);
+    final serverConn = ref.watch(activeServerConnectionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -319,7 +320,13 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                           padding: const EdgeInsets.only(top: 4),
                           child: Row(
                             children: [
-                              ConnectionIndicator(isConnected: isActive, size: 8),
+                              ConnectionIndicator(
+                                isConnected: isActive && (serverConn.valueOrNull?.isConnected ?? false),
+                                isConnecting: isActive &&
+                                    (serverConn.isLoading ||
+                                        (serverConn.valueOrNull?.isConnecting ?? false)),
+                                size: 8,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 '${server.host}:${server.port}',
