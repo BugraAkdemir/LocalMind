@@ -25,10 +25,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
               child: child,
             );
           },
@@ -44,29 +43,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               position: Tween<Offset>(
                 begin: const Offset(0, 1),
                 end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            );
-          },
-        ),
-      ),
-      GoRoute(
-        path: '/prompts',
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const PromptManagerScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
               child: child,
             );
           },
@@ -82,10 +61,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            );
+          },
+        ),
+      ),
+      GoRoute(
+        path: '/prompts',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PromptManagerScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
               child: child,
             );
           },

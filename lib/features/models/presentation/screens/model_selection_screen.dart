@@ -5,30 +5,34 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../server/presentation/providers/server_provider.dart';
 import '../providers/model_provider.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
 class ModelSelectionScreen extends ConsumerWidget {
   const ModelSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppI18n.of(context);
     final activeServer = ref.watch(activeServerProvider);
     final modelsAsync = ref.watch(availableModelsProvider);
     final selectedModelId = ref.watch(selectedModelIdProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Select Model'),
+        title: Text(l10n.selectModel),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: l10n.refresh,
             onPressed: () => ref.refresh(availableModelsProvider),
           ),
         ],
       ),
       body: activeServer == null
-          ? const Center(
+          ? Center(
               child: Text(
-                'Please connect to a server first.',
+                l10n.pleaseConnectServerFirst,
                 style: TextStyle(color: AppColors.textMuted),
               ),
             )
@@ -58,14 +62,14 @@ class ModelSelectionScreen extends ConsumerWidget {
                       const Icon(Icons.error_outline, size: 48, color: Colors.red),
                       const SizedBox(height: 16),
                       Text(
-                        'Failed to load models:\n${err.toString()}',
+                        '${l10n.failedToLoadModels}\n${err.toString()}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
                         onPressed: () => ref.refresh(availableModelsProvider),
-                        child: const Text('Try Again'),
+                        child: Text(l10n.tryAgain),
                       ),
                     ],
                   ),
@@ -73,9 +77,9 @@ class ModelSelectionScreen extends ConsumerWidget {
               ),
               data: (models) {
                 if (models.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'No models found on this server.',
+                      l10n.noModelsFound,
                       style: TextStyle(color: AppColors.textMuted),
                     ),
                   );
@@ -134,7 +138,7 @@ class ModelSelectionScreen extends ConsumerWidget {
                             Row(
                               children: [
                                 Text(
-                                  'Local Model',
+                                  l10n.localModel,
                                   style: TextStyle(color: isSelected ? AppColors.accentLight : AppColors.textMuted),
                                 ),
                                 if (sizeText.isNotEmpty) ...[
@@ -150,13 +154,13 @@ class ModelSelectionScreen extends ConsumerWidget {
                               runSpacing: 4,
                               children: [
                                 if (id.toLowerCase().contains('vision'))
-                                  _buildBadge(context, 'Vision', Icons.remove_red_eye, Colors.blue),
+                                  _buildBadge(context, l10n.vision, Icons.remove_red_eye, AppColors.info),
                                 if (id.toLowerCase().contains('tool') || id.toLowerCase().contains('function'))
-                                  _buildBadge(context, 'Tools', Icons.build, Colors.orange),
+                                  _buildBadge(context, l10n.tools, Icons.build, AppColors.warning),
                                 if (id.toLowerCase().contains('embed'))
-                                  _buildBadge(context, 'Embedding', Icons.layers, Colors.purple),
+                                  _buildBadge(context, l10n.embedding, Icons.layers, AppColors.accentDark),
                                 if (id.toLowerCase().contains('instruct') || id.toLowerCase().contains('chat'))
-                                  _buildBadge(context, 'Chat', Icons.chat, Colors.green),
+                                  _buildBadge(context, l10n.chat, Icons.chat, AppColors.success),
                               ],
                             ),
                           ],
@@ -168,7 +172,7 @@ class ModelSelectionScreen extends ConsumerWidget {
                           ref.read(selectedModelIdProvider.notifier).state = id;
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Model set to: $id')),
+                            SnackBar(content: Text(l10n.modelSetTo(id))),
                           );
                         },
                       ),
@@ -180,7 +184,7 @@ class ModelSelectionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBadge(BuildContext context, String label, IconData icon, MaterialColor color) {
+  Widget _buildBadge(BuildContext context, String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(

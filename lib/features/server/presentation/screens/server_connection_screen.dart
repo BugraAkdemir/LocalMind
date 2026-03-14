@@ -6,6 +6,7 @@ import '../../../../core/widgets/connection_indicator.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../data/models/server_profile_model.dart';
 import '../providers/server_provider.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
 class ServerConnectionScreen extends ConsumerStatefulWidget {
   const ServerConnectionScreen({super.key});
@@ -71,7 +72,8 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
       if (mounted) {
         setState(() {
           _testSuccess = success;
-          _testResult = success ? 'Connection successful!' : 'Connection failed. Please check IP and Port.';
+          final l10n = AppI18n.of(context);
+          _testResult = success ? l10n.connectionSuccessful : l10n.connectionFailed;
           _isTesting = false;
         });
       }
@@ -79,7 +81,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
       if (mounted) {
         setState(() {
           _testSuccess = false;
-          _testResult = 'Error: Cannot reach server. Check IP, Port, and Network.';
+          _testResult = AppI18n.of(context).cannotReachServer;
           _isTesting = false;
         });
       }
@@ -89,7 +91,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
   void _saveServer() {
     if (!_formKey.currentState!.validate() || !_testSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please test the connection first')),
+        SnackBar(content: Text(AppI18n.of(context).pleaseTestConnectionFirst)),
       );
       return;
     }
@@ -113,18 +115,20 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Server saved as active!')),
+      SnackBar(content: Text(AppI18n.of(context).serverSavedAsActive)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppI18n.of(context);
     final servers = ref.watch(serversProvider);
     final serverConn = ref.watch(activeServerConnectionProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('LM Studio Connection'),
+        title: Text(l10n.lmStudioConnection),
         centerTitle: true,
         elevation: 0,
       ),
@@ -135,12 +139,12 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Connect to Local AI',
+                l10n.connectToLocalAI,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter the IP address of the computer running LM Studio. Ensure the local server is started.',
+                l10n.connectInstruction,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade400),
               ),
               const SizedBox(height: 24),
@@ -154,8 +158,8 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                       TextFormField(
                         controller: _hostController,
                         decoration: InputDecoration(
-                          labelText: 'Host IP Address',
-                          hintText: 'e.g., 192.168.1.100',
+                          labelText: l10n.hostIpAddress,
+                          hintText: l10n.ipHint,
                           prefixIcon: const Icon(Icons.computer),
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
@@ -165,7 +169,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                           ),
                         ),
                         keyboardType: TextInputType.url,
-                        validator: (value) => (value == null || value.isEmpty) ? 'Required' : null,
+                        validator: (value) => (value == null || value.isEmpty) ? l10n.required : null,
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -175,8 +179,8 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                             child: TextFormField(
                               controller: _nameController,
                               decoration: InputDecoration(
-                                labelText: 'Name (Optional)',
-                                hintText: 'My Desktop',
+                                labelText: l10n.nameOptional,
+                                hintText: l10n.nameHint,
                                 prefixIcon: const Icon(Icons.label_outline),
                                 filled: true,
                                 fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
@@ -193,7 +197,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                             child: TextFormField(
                               controller: _portController,
                               decoration: InputDecoration(
-                                labelText: 'Port',
+                                labelText: l10n.port,
                                 filled: true,
                                 fillColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
                                 border: OutlineInputBorder(
@@ -203,8 +207,8 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                               ),
                               keyboardType: TextInputType.number,
                               validator: (value) {
-                                if (value == null || value.isEmpty) return 'Required';
-                                if (int.tryParse(value) == null) return 'Invalid';
+                                if (value == null || value.isEmpty) return l10n.required;
+                                if (int.tryParse(value) == null) return l10n.invalid;
                                 return null;
                               },
                             ),
@@ -252,7 +256,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                               ),
                               child: _isTesting 
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Test Connection'),
+                                : Text(l10n.testConnection),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -263,7 +267,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              child: const Text('Save & Connect'),
+                              child: Text(l10n.saveAndConnect),
                             ),
                           ),
                         ],
@@ -275,7 +279,7 @@ class _ServerConnectionScreenState extends ConsumerState<ServerConnectionScreen>
               const SizedBox(height: 36),
               if (servers.isNotEmpty) ...[
                 Text(
-                  'Saved Servers',
+                  l10n.savedServers,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 16),

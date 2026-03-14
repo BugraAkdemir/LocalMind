@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme/app_theme.dart';
 import '../core/router/app_router.dart';
+import '../core/widgets/app_backdrop.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/chat/presentation/providers/assistant_provider.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
 class LocalLMApp extends ConsumerWidget {
   const LocalLMApp({super.key});
@@ -47,25 +50,36 @@ class LocalLMApp extends ConsumerWidget {
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: currentThemeMode == ThemeMode.light ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: currentThemeMode == ThemeMode.light ? Colors.white : const Color(0xFF0F0F14),
+        systemNavigationBarColor: currentThemeMode == ThemeMode.light ? Colors.white : const Color(0xFF0E1011),
         systemNavigationBarIconBrightness: currentThemeMode == ThemeMode.light ? Brightness.dark : Brightness.light,
       ),
     );
 
     return MaterialApp.router(
-      title: 'LocalLM',
+      onGenerateTitle: (context) => AppI18n.of(context).appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: currentThemeMode,
+      locale: Locale(settings.languageCode),
+      supportedLocales: AppI18n.supportedLocales,
+      localizationsDelegates: [
+        AppI18n.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       routerConfig: router,
       builder: (context, child) {
-        return MediaQuery(
+        final scaled = MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScale),
           ),
           child: child!,
         );
+
+        // Global premium backdrop (subtle gradients, no neon).
+        return AppBackdrop(child: scaled);
       },
     );
   }

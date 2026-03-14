@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../data/models/system_prompt_model.dart';
 import '../providers/prompt_provider.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
 class PromptManagerScreen extends ConsumerStatefulWidget {
   const PromptManagerScreen({super.key});
@@ -40,18 +41,20 @@ class _PromptManagerScreenState extends ConsumerState<PromptManagerScreen> {
     _contentController.clear();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prompt saved successfully')),
+      SnackBar(content: Text(AppI18n.of(context).promptSavedSuccessfully)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppI18n.of(context);
     final prompts = ref.watch(systemPromptsProvider);
     final activePromptId = ref.watch(activeSystemPromptIdProvider);
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('System Prompts'),
+        title: Text(l10n.systemPromptsTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -65,35 +68,35 @@ class _PromptManagerScreenState extends ConsumerState<PromptManagerScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Create New Prompt',
+                      l10n.createNewPrompt,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Prompt Title',
-                        hintText: 'e.g. Helpful Assistant',
+                      decoration: InputDecoration(
+                        labelText: l10n.promptTitle,
+                        hintText: l10n.promptTitleHint,
                       ),
-                      validator: (value) => 
-                        value == null || value.isEmpty ? 'Required' : null,
+                      validator: (value) =>
+                        value == null || value.isEmpty ? l10n.required : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _contentController,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'System Prompt Content',
-                        hintText: 'You are a helpful AI assistant...',
+                      decoration: InputDecoration(
+                        labelText: l10n.systemPromptContent,
+                        hintText: l10n.systemPromptContentHint,
                       ),
-                      validator: (value) => 
-                        value == null || value.isEmpty ? 'Required' : null,
+                      validator: (value) =>
+                        value == null || value.isEmpty ? l10n.required : null,
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton.icon(
                       onPressed: _savePrompt,
                       icon: const Icon(Icons.save),
-                      label: const Text('Save Prompt'),
+                      label: Text(l10n.savePrompt),
                     ),
                   ],
                 ),
@@ -103,17 +106,17 @@ class _PromptManagerScreenState extends ConsumerState<PromptManagerScreen> {
             const SizedBox(height: 32),
             
             Text(
-              'Saved Prompts',
+              l10n.savedPrompts,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
             
             if (prompts.isEmpty)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
                   child: Text(
-                    'No system prompts saved.',
+                    l10n.noSystemPromptsSaved,
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
@@ -168,12 +171,12 @@ class _PromptManagerScreenState extends ConsumerState<PromptManagerScreen> {
                         if (isSelected) {
                            ref.read(activeSystemPromptIdProvider.notifier).state = null;
                            ScaffoldMessenger.of(context).showSnackBar(
-                             const SnackBar(content: Text('Cleared active system prompt')),
+                             SnackBar(content: Text(l10n.clearedActiveSystemPrompt)),
                            );
                         } else {
                            ref.read(activeSystemPromptIdProvider.notifier).state = prompt.id;
                            ScaffoldMessenger.of(context).showSnackBar(
-                             SnackBar(content: Text('Set active prompt: ${prompt.name}')),
+                             SnackBar(content: Text(l10n.setActivePrompt(prompt.name))),
                            );
                         }
                       },

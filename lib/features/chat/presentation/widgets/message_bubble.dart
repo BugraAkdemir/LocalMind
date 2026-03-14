@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:flutter/services.dart';
 import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/code_theme.dart';
 import '../../data/models/message_model.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 class MessageBubble extends StatelessWidget {
   final MessageModel message;
   final VoidCallback? onRegenerate;
@@ -22,6 +23,7 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppI18n.of(context);
     if (isSystem) return const SizedBox.shrink(); // Hide system messages
 
     return Container(
@@ -82,7 +84,7 @@ class MessageBubble extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textMuted),
                         ),
                         const SizedBox(width: 8),
-                        Text('Thinking...', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                        Text(l10n.thinking, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
                       ],
                     )
                   else
@@ -129,7 +131,13 @@ class MessageBubble extends StatelessWidget {
                           onTap: () {
                             Clipboard.setData(ClipboardData(text: message.content));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Copied to clipboard', style: TextStyle(fontSize: 12)), duration: Duration(seconds: 1)),
+                              SnackBar(
+                                content: Text(
+                                  l10n.copiedToClipboard,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                duration: const Duration(seconds: 1),
+                              ),
                             );
                           },
                           child: const Icon(Icons.copy, size: 14, color: AppColors.textMuted),
@@ -183,7 +191,11 @@ class CodeElementBuilder extends MarkdownElementBuilder {
         ),
         child: Text(
           element.textContent,
-          style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: AppColors.accentLight),
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
         ),
       );
     }
@@ -194,7 +206,7 @@ class CodeElementBuilder extends MarkdownElementBuilder {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF282C34), // Atom One Dark bg
+        color: const Color(0xFF121614), // premium code surface
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.borderLight),
       ),
@@ -203,16 +215,27 @@ class CodeElementBuilder extends MarkdownElementBuilder {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFF21252B),
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceLight,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+              border: const Border(
+                bottom: BorderSide(color: AppColors.border, width: 1),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   language,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
                 ),
                 InkWell(
                   onTap: () => Clipboard.setData(ClipboardData(text: element.textContent)),
@@ -229,8 +252,12 @@ class CodeElementBuilder extends MarkdownElementBuilder {
               child: HighlightView(
                 element.textContent,
                 language: language,
-                theme: atomOneDarkTheme,
-                textStyle: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                theme: premiumCodeTheme,
+                textStyle: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                  height: 1.35,
+                ),
               ),
             ),
           ),

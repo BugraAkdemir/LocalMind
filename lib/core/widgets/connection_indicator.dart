@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
+import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
 class ConnectionIndicator extends StatefulWidget {
   final bool isConnected;
@@ -59,9 +60,10 @@ class _ConnectionIndicatorState extends State<ConnectionIndicator>
   }
 
   String get _label {
-    if (widget.isConnecting) return 'Connecting...';
-    if (widget.isConnected) return 'Connected';
-    return 'Disconnected';
+    final l10n = AppI18n.of(context);
+    if (widget.isConnecting) return l10n.connecting;
+    if (widget.isConnected) return l10n.connected;
+    return l10n.disconnected;
   }
 
   @override

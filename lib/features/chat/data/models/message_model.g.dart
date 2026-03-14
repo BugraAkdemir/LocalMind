@@ -22,9 +22,11 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
       content: fields[2] as String,
       imagePath: fields[3] as String?,
       tokenCount: fields[4] as int?,
-      toolCalls: (fields[7] as List?)
-          ?.map((dynamic e) => (e as Map).cast<String, dynamic>())
-          ?.toList(),
+      toolCalls: (fields[7] as List?) == null
+          ? null
+          : (fields[7] as List)
+              .map((dynamic e) => (e as Map).cast<String, dynamic>())
+              .toList(),
       toolCallId: fields[8] as String?,
       timestamp: fields[5] as DateTime?,
       isStreaming: fields[6] as bool,

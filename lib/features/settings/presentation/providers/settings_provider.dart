@@ -115,4 +115,9 @@ class SettingsNotifier extends StateNotifier<SettingsModel> {
     }
     await _box.put('app_settings', state);
   }
+
+  Future<void> updateLanguage(String languageCode) async {
+    state = state.copyWith(languageCode: languageCode);
+    await _box.put('app_settings', state);
+  }
 }

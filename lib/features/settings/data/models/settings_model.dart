@@ -40,6 +40,9 @@ class SettingsModel extends HiveObject {
   @HiveField(11, defaultValue: false)
   bool isBetaEnabled;
 
+  @HiveField(12, defaultValue: 'en')
+  String languageCode; // 'en', 'tr'
+
   SettingsModel({
     this.themeMode = 'dark',
     this.textSize = 'medium',
@@ -53,6 +56,7 @@ class SettingsModel extends HiveObject {
     this.wakeWord = 'PORCUPINE',
     this.enableTools = true,
     this.isBetaEnabled = false,
+    this.languageCode = 'en',
   });
 
   SettingsModel copyWith({
@@ -68,6 +72,7 @@ class SettingsModel extends HiveObject {
     String? wakeWord,
     bool? enableTools,
     bool? isBetaEnabled,
+    String? languageCode,
   }) {
     return SettingsModel(
       themeMode: themeMode ?? this.themeMode,
@@ -82,6 +87,7 @@ class SettingsModel extends HiveObject {
       wakeWord: wakeWord ?? this.wakeWord,
       enableTools: enableTools ?? this.enableTools,
       isBetaEnabled: isBetaEnabled ?? this.isBetaEnabled,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 }

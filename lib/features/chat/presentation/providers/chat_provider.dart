@@ -114,6 +114,8 @@ class ChatController {
 
   ChatController(this._ref);
 
+  static const String errNoActiveServer = 'NO_ACTIVE_SERVER';
+
   void stopGeneration() {
     _activeCancelToken?.cancel('User stopped generation');
     _activeCancelToken = null;
@@ -121,7 +123,7 @@ class ChatController {
 
   Future<void> sendMessage(String text, {String? imagePath}) async {
     final activeServer = _ref.read(activeServerProvider);
-    if (activeServer == null) throw Exception('No active server selected');
+    if (activeServer == null) throw Exception(errNoActiveServer);
 
     var conversationId = _ref.read(activeConversationIdProvider);
     final conversationsNotifier = _ref.read(conversationsProvider.notifier);

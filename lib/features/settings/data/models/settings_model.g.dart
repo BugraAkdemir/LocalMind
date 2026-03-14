@@ -29,13 +29,14 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       wakeWord: fields[9] == null ? 'PORCUPINE' : fields[9] as String,
       enableTools: fields[10] == null ? true : fields[10] as bool,
       isBetaEnabled: fields[11] == null ? false : fields[11] as bool,
+      languageCode: fields[12] == null ? 'en' : fields[12] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, SettingsModel obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.themeMode)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       ..writeByte(10)
       ..write(obj.enableTools)
       ..writeByte(11)
-      ..write(obj.isBetaEnabled);
+      ..write(obj.isBetaEnabled)
+      ..writeByte(12)
+      ..write(obj.languageCode);
   }
 
   @override

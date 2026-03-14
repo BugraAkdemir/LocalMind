@@ -4,15 +4,18 @@ class AppColors {
   AppColors._();
 
   // Surfaces
-  static const surface = Color(0xFF0F0F14);
-  static const surfaceLight = Color(0xFF16161E);
-  static const cardSurface = Color(0xFF1A1A24);
-  static const inputSurface = Color(0xFF1E1E2A);
+  // Dark, premium-neutral palette (no neon, no bright purple/blue).
+  // Direction: graphite + warm stone, accent: muted brass (very subtle).
+  static const surface = Color(0xFF0F1111);
+  static const surfaceLight = Color(0xFF171A19);
+  static const cardSurface = Color(0xFF141716);
+  static const inputSurface = Color(0xFF101312);
 
   // Accent
-  static const accent = Color(0xFF00BFA6);
-  static const accentLight = Color(0xFF00E5CC);
-  static const accentDark = Color(0xFF009688);
+  // Muted brass (not yellow/neon).
+  static const accent = Color(0xFF9B8F7A);
+  static const accentLight = Color(0xFFC7BCA8);
+  static const accentDark = Color(0xFF7A705F);
 
   // Gradients
   static const accentGradient = LinearGradient(
@@ -22,31 +25,58 @@ class AppColors {
   );
 
   static const surfaceGradient = LinearGradient(
-    colors: [Color(0xFF1A1A24), Color(0xFF0F0F14)],
+    colors: [Color(0xFF141716), Color(0xFF0F1111)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
+  static const ambientGlowGradient = RadialGradient(
+    colors: [
+      Color(0x169B8F7A),
+      Color(0x000F1111),
+    ],
+    radius: 1.0,
+    center: Alignment(-0.7, -0.8),
+  );
+
+  static const lightSurfaceGradient = LinearGradient(
+    colors: [Color(0xFFF6F3EE), Color(0xFFFFFFFF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const lightAmbientGlowGradient = RadialGradient(
+    colors: [
+      Color(0x129B8F7A),
+      Color(0x00FFFFFF),
+    ],
+    radius: 1.0,
+    center: Alignment(-0.6, -0.9),
+  );
+
   // Text
-  static const textPrimary = Color(0xFFF0F0F5);
-  static const textSecondary = Color(0xFFB0B0C0);
-  static const textMuted = Color(0xFF6B6B80);
+  static const textPrimary = Color(0xFFF2F0EA);
+  static const textSecondary = Color(0xFFB9B6AD);
+  static const textMuted = Color(0xFF7E827B);
 
   // Status
-  static const success = Color(0xFF4CAF50);
-  static const error = Color(0xFFEF5350);
-  static const warning = Color(0xFFFFA726);
-  static const info = Color(0xFF29B6F6);
+  static const success = Color(0xFF4F7E63);
+  static const error = Color(0xFFB85D5D);
+  static const warning = Color(0xFFB8924B);
+  static const info = Color(0xFF6E7B73);
 
   // Borders
-  static const border = Color(0xFF2A2A3A);
-  static const borderLight = Color(0xFF3A3A4A);
+  static const border = Color(0xFF272C35);
+  static const borderLight = Color(0xFF343B48);
 
   // Glass
-  static const glassWhite = Color(0x14FFFFFF);
-  static const glassBorder = Color(0x24FFFFFF);
+  static const glassWhite = Color(0x0FFFFFFF);
+  static const glassBorder = Color(0x1AFFFFFF);
+
+  // Shadows
+  static const shadow = Color(0xCC000000);
 
   // Message bubbles
-  static const userBubble = Color(0xFF00BFA6);
-  static const assistantBubble = Color(0xFF1E1E2A);
+  static const userBubble = accent;
+  static const assistantBubble = cardSurface;
 }
