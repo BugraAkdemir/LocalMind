@@ -13,30 +13,42 @@ class AppBackdrop extends StatelessWidget {
     final baseGradient = isLight ? AppColors.lightSurfaceGradient : AppColors.surfaceGradient;
     final glow = isLight ? AppColors.lightAmbientGlowGradient : AppColors.ambientGlowGradient;
 
+    final screenSize = MediaQuery.sizeOf(context);
+    
     return Stack(
       children: [
-        Positioned.fill(
-          child: DecoratedBox(decoration: BoxDecoration(gradient: baseGradient)),
-        ),
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(decoration: BoxDecoration(gradient: glow)),
-          ),
-        ),
-        // A second subtle glow for depth.
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    (isLight ? const Color(0x1A5B7C8A) : const Color(0x165B7C8A)),
-                    isLight ? const Color(0x00FFFFFF) : const Color(0x000D0F12),
-                  ],
-                  radius: 1.1,
-                  center: const Alignment(0.8, 0.9),
+        // Fixed size background to prevent resize repaints during keyboard animation
+        SizedBox(
+          width: screenSize.width,
+          height: screenSize.height,
+          child: RepaintBoundary(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(decoration: BoxDecoration(gradient: baseGradient)),
                 ),
-              ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(decoration: BoxDecoration(gradient: glow)),
+                  ),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            (isLight ? const Color(0x1A5B7C8A) : const Color(0x165B7C8A)),
+                            isLight ? const Color(0x00FFFFFF) : const Color(0x000D0F12),
+                          ],
+                          radius: 1.1,
+                          center: const Alignment(0.8, 0.9),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

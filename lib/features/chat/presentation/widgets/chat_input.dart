@@ -4,7 +4,6 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'dart:ui';
 import '../../../../app/theme/app_colors.dart';
 import 'package:mobile_locallm/core/localization/app_i18n.dart';
 
@@ -242,97 +241,96 @@ class _ChatInputState extends ConsumerState<ChatInput> {
                   ],
                 ),
               ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(22),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardSurface.withValues(alpha: 0.62),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow.withValues(alpha: 0.30),
-                        blurRadius: 22,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        onPressed: widget.isLoading ? null : _handleAttach,
-                        icon: const Icon(Icons.add_rounded),
-                        color: AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 140),
-                          child: TextField(
-                            controller: _controller,
-                            focusNode: _focusNode,
-                            maxLines: null,
-                            textInputAction: TextInputAction.send,
-                            keyboardType: TextInputType.multiline,
-                            style: const TextStyle(color: AppColors.textPrimary),
-                            decoration: InputDecoration(
-                              hintText:
-                                  _isListening ? l10n.listening : l10n.messageHint,
-                              hintStyle: TextStyle(
-                                color:
-                                    _isListening ? AppColors.accentLight : AppColors.textMuted,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 10,
-                              ),
+            RepaintBoundary(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface.withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow.withValues(alpha: 0.30),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: widget.isLoading ? null : _handleAttach,
+                      icon: const Icon(Icons.add_rounded),
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 140),
+                        child: TextField(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          maxLines: null,
+                          textInputAction: TextInputAction.send,
+                          keyboardType: TextInputType.multiline,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText:
+                                _isListening ? l10n.listening : l10n.messageHint,
+                            hintStyle: TextStyle(
+                              color: _isListening
+                                  ? AppColors.accentLight
+                                  : AppColors.textMuted,
                             ),
-                            onSubmitted: (_) {
-                              if (!widget.isLoading) _handleSend();
-                            },
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 10,
+                            ),
                           ),
+                          onSubmitted: (_) {
+                            if (!widget.isLoading) _handleSend();
+                          },
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      if (!hasInput && !widget.isLoading)
-                        IconButton(
-                          onPressed: _listen,
-                          icon: Icon(
-                            _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                          ),
-                          color: _isListening ? AppColors.accentLight : AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    if (!hasInput && !widget.isLoading)
+                      IconButton(
+                        onPressed: _listen,
+                        icon: Icon(
+                          _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                         ),
-                      const SizedBox(width: 2),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: (hasInput || widget.isLoading)
-                              ? AppColors.accent
-                              : AppColors.surfaceLight,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: IconButton(
-                          onPressed: widget.isLoading
-                              ? widget.onStop
-                              : (hasInput ? _handleSend : null),
-                          icon: widget.isLoading
-                              ? const Icon(Icons.stop_rounded, size: 20)
-                              : const Icon(Icons.arrow_upward_rounded, size: 20),
-                          color: (hasInput || widget.isLoading)
-                              ? AppColors.surface
-                              : AppColors.textMuted,
-                        ),
+                        color: _isListening
+                            ? AppColors.accentLight
+                            : AppColors.textSecondary,
                       ),
-                    ],
-                  ),
+                    const SizedBox(width: 2),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: (hasInput || widget.isLoading)
+                            ? AppColors.accent
+                            : AppColors.surfaceLight,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: IconButton(
+                        onPressed: widget.isLoading
+                            ? widget.onStop
+                            : (hasInput ? _handleSend : null),
+                        icon: widget.isLoading
+                            ? const Icon(Icons.stop_rounded, size: 20)
+                            : const Icon(Icons.arrow_upward_rounded, size: 20),
+                        color: (hasInput || widget.isLoading)
+                            ? AppColors.surface
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

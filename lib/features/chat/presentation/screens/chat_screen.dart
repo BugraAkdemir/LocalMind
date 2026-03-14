@@ -61,8 +61,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final l10n = AppI18n.of(context);
     final activeConversation = ref.watch(activeConversationProvider);
     final activeServer = ref.watch(activeServerProvider);
-    final serverConn = ref.watch(activeServerConnectionProvider);
-    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final isConnected = ref.watch(activeServerConnectionProvider.select((v) => v.valueOrNull?.isConnected ?? false));
+    final isConnecting = ref.watch(activeServerConnectionProvider.select((v) => 
+        v.isLoading || (v.valueOrNull?.isConnecting ?? false)));
+    // Use viewInsetsOf for better performance (Flutter 3.10+) 
+    // This avoids rebuilding the entire ChatScreen when only the keyboard height changes frame-by-frame
+    // although we still need it for the empty state properly.
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardOpen = keyboardBottom > 0;
     
     // Determine if we are currently waiting for a stream based on the last message
     final messages = activeConversation?.messages ?? [];
@@ -78,9 +84,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: _Header(
           title: activeConversation?.title ?? 'New Chat',
           serverName: activeServer?.name,
-          isConnected: serverConn.valueOrNull?.isConnected ?? false,
-          isConnecting: serverConn.isLoading ||
-              (serverConn.valueOrNull?.isConnecting ?? false),
+          isConnected: isConnected,
+          isConnecting: isConnecting,
         ),
         actions: [
           IconButton(
@@ -96,15 +101,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(
             child: messages.isEmpty
                 ? _buildEmptyState(context, keyboardOpen: keyboardOpen)
-                : ListView.builder(
-                    controller: _scrollController,
-                    reverse: true,
-                    padding: const EdgeInsets.only(bottom: 16, top: 12),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[messages.length - 1 - index];
-                      return MessageBubble(message: message);
-                    },
+                : RepaintBoundary(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.only(bottom: 16, top: 12),
+                      itemCount: messages.length,
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      cacheExtent: 500,
+                      itemBuilder: (context, index) {
+                        final message = messages[messages.length - 1 - index];
+                        return MessageBubble(message: message);
+                      },
+                    ),
                   ),
           ),
           ChatInput(
@@ -119,87 +129,80 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildEmptyState(BuildContext context, {required bool keyboardOpen}) {
     final l10n = AppI18n.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            24 + (keyboardOpen ? 24 : 64),
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardSurface.withValues(alpha: 0.75),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.shadow.withValues(alpha: 0.35),
-                          blurRadius: 24,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.smart_toy,
-                      size: keyboardOpen ? 44 : 56,
-                      color: AppColors.accentLight,
-                    ),
+    return Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          24 + (keyboardOpen ? 24 : 64),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.cardSurface.withValues(alpha: 0.75),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow.withValues(alpha: 0.35),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
                   ),
-                  SizedBox(height: keyboardOpen ? 14 : 18),
-                  Text(
-                    l10n.appName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    keyboardOpen
-                        ? l10n.typeToStart
-                        : l10n.welcomeTagline,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                  if (!keyboardOpen) ...[
-                    const SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted),
-                          SizedBox(width: 8),
-                          Text(
-                            l10n.noCloudStoredOnDevice,
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ],
               ),
+              child: Icon(
+                Icons.smart_toy,
+                size: keyboardOpen ? 44 : 56,
+                color: AppColors.accentLight,
+              ),
             ),
-          ),
-        );
-      },
+            SizedBox(height: keyboardOpen ? 14 : 18),
+            Text(
+              l10n.appName,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              keyboardOpen
+                  ? l10n.typeToStart
+                  : l10n.welcomeTagline,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+            if (!keyboardOpen) ...[
+              const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted),
+                    SizedBox(width: 8),
+                    Text(
+                      l10n.noCloudStoredOnDevice,
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

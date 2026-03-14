@@ -26,142 +26,144 @@ class MessageBubble extends StatelessWidget {
     final l10n = AppI18n.of(context);
     if (isSystem) return const SizedBox.shrink(); // Hide system messages
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            _buildAvatar(context),
-            const SizedBox(width: 12),
-          ],
-          
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isUser ? AppColors.userBubble.withValues(alpha: 0.15) : AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16).copyWith(
-                  bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
-                  bottomLeft: !isUser ? const Radius.circular(4) : const Radius.circular(16),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Row(
+          mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser) ...[
+              _buildAvatar(context),
+              const SizedBox(width: 12),
+            ],
+            
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isUser ? AppColors.userBubble.withValues(alpha: 0.15) : AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(16).copyWith(
+                    bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
+                    bottomLeft: !isUser ? const Radius.circular(4) : const Radius.circular(16),
+                  ),
+                  border: Border.all(
+                    color: isUser ? AppColors.accent.withValues(alpha: 0.3) : AppColors.border,
+                    width: 1,
+                  ),
                 ),
-                border: Border.all(
-                  color: isUser ? AppColors.accent.withValues(alpha: 0.3) : AppColors.border,
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (message.imagePath != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        message.imagePath!,
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 200,
-                            height: 200,
-                            color: AppColors.border,
-                            child: const Center(child: Icon(Icons.broken_image)),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  
-                  if (message.content.isEmpty && message.isStreaming)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(
-                          width: 12, height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textMuted),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(l10n.thinking, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                      ],
-                    )
-                  else
-                    MarkdownBody(
-                      data: message.content,
-                      selectable: true,
-                      styleSheet: MarkdownStyleSheet(
-                        p: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isUser ? AppColors.textPrimary : AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                        code: const TextStyle(
-                          backgroundColor: Colors.transparent,
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                        ),
-                      ),
-                      builders: {
-                        'code': CodeElementBuilder(),
-                      },
-                    ),
-                    
-                  if (message.isStreaming)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8.0),
-                      child: Icon(Icons.circle, size: 8, color: AppColors.accent),
-                    ),
-                    
-                  const SizedBox(height: 8),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Timestamp (hidden for simplicity unless requested)
-                      // Text(
-                      //   intl.DateFormat('HH:mm').format(message.timestamp),
-                      //   style: TextStyle(color: AppColors.textMuted, fontSize: 10),
-                      // ),
-                      // const SizedBox(width: 12),
-                      
-                      if (!message.isStreaming) ...[
-                        InkWell(
-                          onTap: () {
-                            Clipboard.setData(ClipboardData(text: message.content));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  l10n.copiedToClipboard,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                                duration: const Duration(seconds: 1),
-                              ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (message.imagePath != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          message.imagePath!,
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 200,
+                              height: 200,
+                              color: AppColors.border,
+                              child: const Center(child: Icon(Icons.broken_image)),
                             );
                           },
-                          child: const Icon(Icons.copy, size: 14, color: AppColors.textMuted),
                         ),
-                        if (!isUser && showRegenerate && onRegenerate != null) ...[
-                          const SizedBox(width: 12),
-                          InkWell(
-                            onTap: onRegenerate,
-                            child: const Icon(Icons.refresh, size: 14, color: AppColors.textMuted),
-                          ),
-                        ],
-                      ]
+                      ),
+                      const SizedBox(height: 12),
                     ],
-                  ),
-                ],
+                    
+                    if (message.content.isEmpty && message.isStreaming)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 12, height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textMuted),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(l10n.thinking, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                        ],
+                      )
+                    else
+                      MarkdownBody(
+                        data: message.content,
+                        selectable: true,
+                        styleSheet: MarkdownStyleSheet(
+                          p: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: isUser ? AppColors.textPrimary : AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                          code: const TextStyle(
+                            backgroundColor: Colors.transparent,
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                          ),
+                        ),
+                        builders: {
+                          'code': CodeElementBuilder(),
+                        },
+                      ),
+                      
+                    if (message.isStreaming)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Icon(Icons.circle, size: 8, color: AppColors.accent),
+                      ),
+                      
+                    const SizedBox(height: 8),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Timestamp (hidden for simplicity unless requested)
+                        // Text(
+                        //   intl.DateFormat('HH:mm').format(message.timestamp),
+                        //   style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                        // ),
+                        // const SizedBox(width: 12),
+                        
+                        if (!message.isStreaming) ...[
+                          InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: message.content));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l10n.copiedToClipboard,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            child: const Icon(Icons.copy, size: 14, color: AppColors.textMuted),
+                          ),
+                          if (!isUser && showRegenerate && onRegenerate != null) ...[
+                            const SizedBox(width: 12),
+                            InkWell(
+                              onTap: onRegenerate,
+                              child: const Icon(Icons.refresh, size: 14, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ]
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          if (isUser) ...[
-            const SizedBox(width: 12),
-            _buildAvatar(context),
+            
+            if (isUser) ...[
+              const SizedBox(width: 12),
+              _buildAvatar(context),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
