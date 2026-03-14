@@ -22,13 +22,37 @@ class SettingsModel extends HiveObject {
   @HiveField(5)
   int defaultMaxTokens;
 
+  @HiveField(6, defaultValue: false)
+  bool isAssistantEnabled;
+
+  @HiveField(7, defaultValue: '')
+  String porcupineAccessKey;
+
+  @HiveField(8, defaultValue: 0.5)
+  double assistantSensitivity;
+
+  @HiveField(9, defaultValue: 'PORCUPINE')
+  String wakeWord;
+
+  @HiveField(10, defaultValue: true)
+  bool enableTools;
+
+  @HiveField(11, defaultValue: false)
+  bool isBetaEnabled;
+
   SettingsModel({
-    this.themeMode = 'dark', // Default to our OLED-optimized theme
+    this.themeMode = 'dark',
     this.textSize = 'medium',
     this.enableSpeech = true,
     this.defaultTemperature = 0.7,
     this.defaultTopP = 1.0,
     this.defaultMaxTokens = -1,
+    this.isAssistantEnabled = false,
+    this.porcupineAccessKey = '',
+    this.assistantSensitivity = 0.5,
+    this.wakeWord = 'PORCUPINE',
+    this.enableTools = true,
+    this.isBetaEnabled = false,
   });
 
   SettingsModel copyWith({
@@ -38,6 +62,12 @@ class SettingsModel extends HiveObject {
     double? defaultTemperature,
     double? defaultTopP,
     int? defaultMaxTokens,
+    bool? isAssistantEnabled,
+    String? porcupineAccessKey,
+    double? assistantSensitivity,
+    String? wakeWord,
+    bool? enableTools,
+    bool? isBetaEnabled,
   }) {
     return SettingsModel(
       themeMode: themeMode ?? this.themeMode,
@@ -46,6 +76,12 @@ class SettingsModel extends HiveObject {
       defaultTemperature: defaultTemperature ?? this.defaultTemperature,
       defaultTopP: defaultTopP ?? this.defaultTopP,
       defaultMaxTokens: defaultMaxTokens ?? this.defaultMaxTokens,
+      isAssistantEnabled: isAssistantEnabled ?? this.isAssistantEnabled,
+      porcupineAccessKey: porcupineAccessKey ?? this.porcupineAccessKey,
+      assistantSensitivity: assistantSensitivity ?? this.assistantSensitivity,
+      wakeWord: wakeWord ?? this.wakeWord,
+      enableTools: enableTools ?? this.enableTools,
+      isBetaEnabled: isBetaEnabled ?? this.isBetaEnabled,
     );
   }
 }

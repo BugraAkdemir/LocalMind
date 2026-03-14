@@ -23,13 +23,19 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       defaultTemperature: fields[3] as double,
       defaultTopP: fields[4] as double,
       defaultMaxTokens: fields[5] as int,
+      isAssistantEnabled: fields[6] == null ? false : fields[6] as bool,
+      porcupineAccessKey: fields[7] == null ? '' : fields[7] as String,
+      assistantSensitivity: fields[8] == null ? 0.5 : fields[8] as double,
+      wakeWord: fields[9] == null ? 'PORCUPINE' : fields[9] as String,
+      enableTools: fields[10] == null ? true : fields[10] as bool,
+      isBetaEnabled: fields[11] == null ? false : fields[11] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, SettingsModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(12)
       ..writeByte(0)
       ..write(obj.themeMode)
       ..writeByte(1)
@@ -41,7 +47,19 @@ class SettingsModelAdapter extends TypeAdapter<SettingsModel> {
       ..writeByte(4)
       ..write(obj.defaultTopP)
       ..writeByte(5)
-      ..write(obj.defaultMaxTokens);
+      ..write(obj.defaultMaxTokens)
+      ..writeByte(6)
+      ..write(obj.isAssistantEnabled)
+      ..writeByte(7)
+      ..write(obj.porcupineAccessKey)
+      ..writeByte(8)
+      ..write(obj.assistantSensitivity)
+      ..writeByte(9)
+      ..write(obj.wakeWord)
+      ..writeByte(10)
+      ..write(obj.enableTools)
+      ..writeByte(11)
+      ..write(obj.isBetaEnabled);
   }
 
   @override

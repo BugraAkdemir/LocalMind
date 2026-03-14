@@ -8,9 +8,16 @@ import 'features/chat/data/models/message_model.dart';
 import 'features/prompts/data/models/system_prompt_model.dart';
 
 import 'features/settings/data/models/settings_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await dotenv.load();
+  } catch (e) {
+    debugPrint("Warning: .env file loading failed: $e");
+  }
 
   await Hive.initFlutter();
 
@@ -27,5 +34,9 @@ void main() async {
   await Hive.openBox<SystemPromptModel>('prompts');
   await Hive.openBox<SettingsModel>('settings');
 
-  runApp(const ProviderScope(child: LocalLMApp()));
+  runApp(
+    const ProviderScope(
+      child: LocalLMApp(),
+    ),
+  );
 }

@@ -47,7 +47,7 @@ class LMStudioApiService {
   }
 
   /// Sends a chat completion request with streaming enabled
-  Stream<String> streamChatCompletion({
+  Stream<Map<String, dynamic>> streamChatCompletion({
     required ServerProfileModel server,
     required String modelId,
     required List<MessageModel> messages,
@@ -55,6 +55,7 @@ class LMStudioApiService {
     double temperature = 0.7,
     int maxTokens = -1,
     double topP = 1.0,
+    List<Map<String, dynamic>>? tools,
     CancelToken? cancelToken,
   }) async* {
     final List<Map<String, dynamic>> apiMessages = [];
@@ -72,6 +73,8 @@ class LMStudioApiService {
       'top_p': topP,
       'max_tokens': maxTokens,
       'stream': true,
+      if (tools != null && tools.isNotEmpty) 'tools': tools,
+      if (tools != null && tools.isNotEmpty) 'tool_choice': 'auto',
     };
 
     try {
@@ -99,11 +102,8 @@ class LMStudioApiService {
               final choices = data['choices'] as List<dynamic>?;
               if (choices != null && choices.isNotEmpty) {
                 final delta = choices.first['delta'] as Map<String, dynamic>?;
-                if (delta != null && delta.containsKey('content')) {
-                  final content = delta['content'] as String?;
-                  if (content != null) {
-                    yield content;
-                  }
+                if (delta != null) {
+                  yield delta;
                 }
               }
             } catch (e) {

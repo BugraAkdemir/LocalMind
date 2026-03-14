@@ -34,7 +34,6 @@ class _ChatInputState extends ConsumerState<ChatInput> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
     _controller.addListener(_onTextChanged);
   }
 
@@ -53,16 +52,21 @@ class _ChatInputState extends ConsumerState<ChatInput> {
     super.dispose();
   }
 
-  void _initSpeech() async {
-    _speechEnabled = await _speech.initialize(
-      onError: (val) => debugPrint('Speech Error: ${val.errorMsg}'),
-      onStatus: (val) {
-        if (val == 'done' || val == 'notListening') {
-          setState(() => _isListening = false);
-        }
-      },
-    );
-    setState(() {});
+  Future<bool> _initSpeech() async {
+    try {
+      _speechEnabled = await _speech.initialize(
+        onError: (val) => debugPrint('Speech Error: ${val.errorMsg}'),
+        onStatus: (val) {
+          if (val == 'done' || val == 'notListening') {
+            setState(() => _isListening = false);
+          }
+        },
+      );
+      return _speechEnabled;
+    } catch (e) {
+      debugPrint('Speech Init Error: $e');
+      return false;
+    }
   }
 
   void _listen() async {
@@ -70,6 +74,10 @@ class _ChatInputState extends ConsumerState<ChatInput> {
       // Check microphone permission
       final status = await Permission.microphone.request();
       if (status.isGranted) {
+        if (!_speechEnabled) {
+          await _initSpeech();
+        }
+        
         if (_speechEnabled) {
           setState(() => _isListening = true);
           _speech.listen(

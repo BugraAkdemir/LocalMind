@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import '../core/router/app_router.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
+import '../features/chat/presentation/providers/assistant_provider.dart';
 
 class LocalLMApp extends ConsumerWidget {
   const LocalLMApp({super.key});
@@ -12,6 +13,9 @@ class LocalLMApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final settings = ref.watch(settingsProvider);
+    
+    // Trigger Assistant Controller initialization
+    ref.read(assistantControllerProvider);
 
     ThemeMode currentThemeMode;
     switch (settings.themeMode) {

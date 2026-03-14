@@ -37,7 +37,7 @@ class SettingsNotifier extends StateNotifier<SettingsModel> {
     await _box.put('app_settings', newSettings);
   }
 
-  Future<void> updateEnableSpeech(bool enable) async {
+  Future<void> updateSpeechStatus(bool enable) async {
     final newSettings = state.copyWith(enableSpeech: enable);
     state = newSettings;
     await _box.put('app_settings', newSettings);
@@ -73,5 +73,46 @@ class SettingsNotifier extends StateNotifier<SettingsModel> {
     final newSettings = state.copyWith(defaultMaxTokens: maxTokens);
     state = newSettings;
     await _box.put('app_settings', newSettings);
+  }
+
+  Future<void> updateAssistantStatus(bool enable) async {
+    final newSettings = state.copyWith(isAssistantEnabled: enable);
+    state = newSettings;
+    await _box.put('app_settings', newSettings);
+  }
+
+  Future<void> updatePorcupineAccessKey(String key) async {
+    state = state.copyWith(porcupineAccessKey: key);
+    await _box.put('app_settings', state);
+  }
+
+  Future<void> updateAssistantSensitivity(double value) async {
+    state = state.copyWith(assistantSensitivity: value);
+    await _box.put('app_settings', state);
+  }
+
+  Future<void> updateWakeWord(String keyword) async {
+    state = state.copyWith(wakeWord: keyword);
+    await _box.put('app_settings', state);
+  }
+
+  Future<void> updateEnableTools(bool enable) async {
+    state = state.copyWith(enableTools: enable);
+    await _box.put('app_settings', state);
+  }
+
+  Future<void> updateBetaStatus(bool enable) async {
+    if (!enable) {
+      // Force reset all beta-dependent features to false when beta is disabled
+      state = state.copyWith(
+        isBetaEnabled: false,
+        enableSpeech: false,
+        enableTools: false,
+        isAssistantEnabled: false,
+      );
+    } else {
+      state = state.copyWith(isBetaEnabled: true);
+    }
+    await _box.put('app_settings', state);
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -8,6 +9,7 @@ import '../../../server/presentation/providers/server_provider.dart';
 import '../../../server/data/datasources/lm_studio_api_service.dart';
 import '../../../prompts/presentation/providers/prompt_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../../core/tools/tool_registry.dart';
 
 final conversationBoxProvider = Provider<Box<ConversationModel>>((ref) {
   return Hive.box<ConversationModel>('conversations');
@@ -125,6 +127,7 @@ class ChatController {
     final conversationsNotifier = _ref.read(conversationsProvider.notifier);
     final activeSystemPrompt = _ref.read(activeSystemPromptProvider);
     final appSettings = _ref.read(settingsProvider);
+    final toolRegistry = _ref.read(toolRegistryProvider);
 
     // Create a new conversation if none is active
     if (conversationId == null) {
@@ -163,6 +166,10 @@ class ChatController {
     _activeCancelToken = CancelToken();
 
     try {
+      final List<Map<String, dynamic>>? toolsJson = appSettings.enableTools 
+          ? toolRegistry.tools.map((t) => t.toApiJson()).toList()
+          : null;
+
       final stream = apiService.streamChatCompletion(
         server: activeServer,
         modelId: modelId,
@@ -172,26 +179,117 @@ class ChatController {
         topP: appSettings.defaultTopP,
         maxTokens: appSettings.defaultMaxTokens,
         cancelToken: _activeCancelToken,
+        tools: toolsJson,
       );
 
       final buffer = StringBuffer();
+      final Map<int, Map<String, dynamic>> toolCallsBuffer = {};
       
-      await for (final chunk in stream) {
-        buffer.write(chunk);
-        
-        // Every few chunks, update the UI (Hive save is fast enough)
-        assistantMessage = assistantMessage.copyWith(
-          content: buffer.toString(),
-        );
-        await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+      await for (final delta in stream) {
+        if (delta.containsKey('content')) {
+          final chunk = delta['content'] as String?;
+          if (chunk != null) {
+            buffer.write(chunk);
+            // Every few chunks, update the UI
+            assistantMessage = assistantMessage.copyWith(content: buffer.toString());
+            await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+          }
+        }
+
+        if (delta.containsKey('tool_calls')) {
+          final toolCalls = delta['tool_calls'] as List<dynamic>;
+          for (var tc in toolCalls) {
+            final index = tc['index'] as int;
+            if (!toolCallsBuffer.containsKey(index)) {
+              toolCallsBuffer[index] = {
+                'id': tc['id'],
+                'function': {
+                  'name': tc['function']?['name'] ?? '',
+                  'arguments': '',
+                }
+              };
+            }
+            if (tc['function']?['arguments'] != null) {
+              toolCallsBuffer[index]!['function']['arguments'] += tc['function']['arguments'];
+            }
+          }
+        }
       }
 
-      // 4. Stream finished
-      assistantMessage = assistantMessage.copyWith(
-        content: buffer.toString(),
-        isStreaming: false,
-      );
-      await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+      // 4. Stream finished - Check for Tool Calls
+      if (toolCallsBuffer.isNotEmpty) {
+        final List<Map<String, dynamic>> toolCallsList = toolCallsBuffer.values.toList();
+        
+        assistantMessage = assistantMessage.copyWith(
+          content: buffer.isNotEmpty ? buffer.toString() : '',
+          toolCalls: toolCallsList,
+          isStreaming: false,
+        );
+        await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+
+        for (var tc in toolCallsList) {
+          final name = tc['function']['name'] as String;
+          final argsString = tc['function']['arguments'] as String;
+          final tool = toolRegistry.tools.firstWhere((t) => t.name == name);
+          
+          Map<String, dynamic> args = {};
+          try {
+            args = jsonDecode(argsString);
+          } catch (_) {}
+
+          final result = await tool.onExecute(args);
+          
+          final toolResultMessage = MessageModel(
+            id: const Uuid().v4(),
+            role: 'tool',
+            toolCallId: tc['id'],
+            content: result,
+          );
+          await conversationsNotifier.addMessage(conversationId, toolResultMessage);
+        }
+
+        // Recursive call (one level) to get final answer
+        final updatedConversation = _ref.read(activeConversationProvider);
+        if (updatedConversation != null) {
+          final finalAssistantId = const Uuid().v4();
+          var finalAssistantMessage = MessageModel(
+            id: finalAssistantId,
+            role: 'assistant',
+            content: '',
+            isStreaming: true,
+          );
+          await conversationsNotifier.addMessage(conversationId, finalAssistantMessage);
+
+          final finalStream = apiService.streamChatCompletion(
+            server: activeServer,
+            modelId: modelId,
+            messages: updatedConversation.messages.where((m) => !m.isStreaming || m.id == finalAssistantId).toList(),
+            systemPrompt: systemPrompt,
+            temperature: appSettings.defaultTemperature,
+            topP: appSettings.defaultTopP,
+            maxTokens: appSettings.defaultMaxTokens,
+            cancelToken: _activeCancelToken,
+          );
+
+          final finalBuffer = StringBuffer();
+          await for (final delta in finalStream) {
+            if (delta.containsKey('content')) {
+              final chunk = delta['content'] as String?;
+              if (chunk != null) {
+                finalBuffer.write(chunk);
+                finalAssistantMessage = finalAssistantMessage.copyWith(content: finalBuffer.toString());
+                await conversationsNotifier.updateMessage(conversationId, finalAssistantMessage);
+              }
+            }
+          }
+          
+          finalAssistantMessage = finalAssistantMessage.copyWith(isStreaming: false);
+          await conversationsNotifier.updateMessage(conversationId, finalAssistantMessage);
+        }
+      } else {
+        assistantMessage = assistantMessage.copyWith(isStreaming: false);
+        await conversationsNotifier.updateMessage(conversationId, assistantMessage);
+      }
 
     } catch (e) {
       if (e is DioException && CancelToken.isCancel(e)) {

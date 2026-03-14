@@ -22,6 +22,10 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
       content: fields[2] as String,
       imagePath: fields[3] as String?,
       tokenCount: fields[4] as int?,
+      toolCalls: (fields[7] as List?)
+          ?.map((dynamic e) => (e as Map).cast<String, dynamic>())
+          ?.toList(),
+      toolCallId: fields[8] as String?,
       timestamp: fields[5] as DateTime?,
       isStreaming: fields[6] as bool,
     );
@@ -30,7 +34,7 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
   @override
   void write(BinaryWriter writer, MessageModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +48,11 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
       ..writeByte(5)
       ..write(obj.timestamp)
       ..writeByte(6)
-      ..write(obj.isStreaming);
+      ..write(obj.isStreaming)
+      ..writeByte(7)
+      ..write(obj.toolCalls)
+      ..writeByte(8)
+      ..write(obj.toolCallId);
   }
 
   @override
